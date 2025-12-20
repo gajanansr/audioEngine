@@ -16,6 +16,7 @@ export { AutoTune } from './plugins/pitch/AutoTune';
 // AI exports
 export { VocalAnalyzer, vocalAnalyzer } from './ai/VocalAnalyzer';
 export { ParameterOptimizer, parameterOptimizer } from './ai/ParameterOptimizer';
+export { ReferenceAnalyzer, referenceAnalyzer } from './ai/ReferenceAnalyzer';
 
 // Macro exports
 export { MacroController, macroController, MACRO_DEFINITIONS } from './macros/MacroController';
