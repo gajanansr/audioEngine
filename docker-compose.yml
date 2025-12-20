@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY}
+      - POLL_INTERVAL_MS=5000
+      - WORKER_ID=worker-1
+    restart: unless-stopped
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  # Optional: Run multiple workers for parallel processing
+  # worker-2:
+  #   extends: worker
+  #   environment:
+  #     - WORKER_ID=worker-2

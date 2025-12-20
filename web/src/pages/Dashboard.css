@@ -1,0 +1,122 @@
+.dashboard-page {
+    min-height: 100vh;
+    background: var(--bg-primary);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md) var(--space-xl);
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.header-left .logo {
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.user-email {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.dashboard-main {
+    padding: var(--space-2xl);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xl);
+}
+
+.section-header h2 {
+    font-size: var(--font-size-xl);
+    font-weight: 600;
+}
+
+.new-project-form {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+    align-items: center;
+}
+
+.new-project-form .input {
+    flex: 1;
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+.projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+}
+
+.project-card {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.project-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent-primary);
+    box-shadow: var(--glow-accent);
+}
+
+.project-card h3 {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+}
+
+.project-genre {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin-right: var(--space-sm);
+}
+
+.project-date {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.empty-state {
+    text-align: center;
+    padding: var(--space-2xl);
+}
+
+.empty-state h3 {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--space-sm);
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+}
+
+.loading {
+    text-align: center;
+    padding: var(--space-2xl);
+    color: var(--text-secondary);
+}

@@ -1,0 +1,41 @@
+.macro-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+}
+
+.macro-control {
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.macro-control:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.macro-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.macro-label {
+    font-weight: 500;
+    font-size: var(--font-size-sm);
+}
+
+.macro-value {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--accent-primary);
+    min-width: 60px;
+    text-align: right;
+}
+
+.macro-description {
+    margin-top: var(--space-sm);
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
