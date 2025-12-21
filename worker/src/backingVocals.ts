@@ -166,11 +166,12 @@ export class BackingVocalsGenerator {
 
         if (options.enableDoubles && options.doublesAmount > 0) {
             console.log('   → Generating vocal doubles...');
-            const doublesGain = (options.doublesAmount / 100) * 0.3; // Max 30% volume
+            // INCREASED: Max 60% volume (was 30%)
+            const doublesGain = (options.doublesAmount / 100) * 0.6;
 
-            // Create left and right doubles
-            const doubleL = this.pitchShifter.createDouble(leadVocal, 8, 15);
-            const doubleR = this.pitchShifter.createDouble(leadVocal, -6, 22);
+            // INCREASED: More detune (20 cents vs 8) and longer delays
+            const doubleL = this.pitchShifter.createDouble(leadVocal, 20, 25);
+            const doubleR = this.pitchShifter.createDouble(leadVocal, -15, 35);
 
             for (let i = 0; i < output.length; i++) {
                 output[i] += (doubleL[i] + doubleR[i]) * doublesGain;
@@ -179,35 +180,44 @@ export class BackingVocalsGenerator {
 
         if (options.enableHarmonies && options.harmoniesAmount > 0) {
             console.log(`   → Generating ${options.harmonyType} harmonies...`);
-            const harmoniesGain = (options.harmoniesAmount / 100) * 0.25; // Max 25% volume
+            // INCREASED: Max 50% volume (was 25%)
+            const harmoniesGain = (options.harmoniesAmount / 100) * 0.5;
 
             switch (options.harmonyType) {
                 case 'thirds':
-                    // Major third up (+4 semitones)
-                    const third = this.pitchShifter.createHarmony(leadVocal, 4, harmoniesGain);
-                    this.addToOutput(output, third);
+                    // Major third up (+4 semitones) + minor third down (-3)
+                    const thirdUp = this.pitchShifter.createHarmony(leadVocal, 4, harmoniesGain * 0.7);
+                    const thirdDown = this.pitchShifter.createHarmony(leadVocal, -3, harmoniesGain * 0.5);
+                    this.addToOutput(output, thirdUp);
+                    this.addToOutput(output, thirdDown);
                     break;
 
                 case 'fifths':
-                    // Perfect fifth up (+7 semitones)
-                    const fifth = this.pitchShifter.createHarmony(leadVocal, 7, harmoniesGain);
-                    this.addToOutput(output, fifth);
+                    // Perfect fifth up (+7) and fourth down (-5)
+                    const fifthUp = this.pitchShifter.createHarmony(leadVocal, 7, harmoniesGain * 0.7);
+                    const fourthDown = this.pitchShifter.createHarmony(leadVocal, -5, harmoniesGain * 0.5);
+                    this.addToOutput(output, fifthUp);
+                    this.addToOutput(output, fourthDown);
                     break;
 
                 case 'octave':
-                    // Octave up (+12 semitones) - whisper-like
-                    const octaveUp = this.pitchShifter.createHarmony(leadVocal, 12, harmoniesGain * 0.5);
+                    // Octave up (+12) and octave down (-12)
+                    const octaveUp = this.pitchShifter.createHarmony(leadVocal, 12, harmoniesGain * 0.6);
+                    const octaveDown = this.pitchShifter.createHarmony(leadVocal, -12, harmoniesGain * 0.4);
                     this.addToOutput(output, octaveUp);
+                    this.addToOutput(output, octaveDown);
                     break;
 
                 case 'full':
-                    // Full harmony stack: third + fifth + octave
-                    const fullThird = this.pitchShifter.createHarmony(leadVocal, 4, harmoniesGain * 0.6);
-                    const fullFifth = this.pitchShifter.createHarmony(leadVocal, 7, harmoniesGain * 0.5);
-                    const fullOctave = this.pitchShifter.createHarmony(leadVocal, 12, harmoniesGain * 0.3);
-                    this.addToOutput(output, fullThird);
+                    // Full harmony stack with more layers
+                    const fullThirdUp = this.pitchShifter.createHarmony(leadVocal, 4, harmoniesGain * 0.5);
+                    const fullThirdDown = this.pitchShifter.createHarmony(leadVocal, -3, harmoniesGain * 0.4);
+                    const fullFifth = this.pitchShifter.createHarmony(leadVocal, 7, harmoniesGain * 0.4);
+                    const fullOctaveUp = this.pitchShifter.createHarmony(leadVocal, 12, harmoniesGain * 0.3);
+                    this.addToOutput(output, fullThirdUp);
+                    this.addToOutput(output, fullThirdDown);
                     this.addToOutput(output, fullFifth);
-                    this.addToOutput(output, fullOctave);
+                    this.addToOutput(output, fullOctaveUp);
                     break;
             }
         }
