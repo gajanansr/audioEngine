@@ -18,6 +18,12 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { MPEGDecoderWebWorker } from 'mpg123-decoder';
+import {
+    WorkerVocalAnalyzer,
+    WorkerReferenceAnalyzer,
+    WorkerParameterOptimizer,
+    OptimizedParameters
+} from './aiAnalyzer';
 
 // ============================================
 // ENVIRONMENT & CONFIGURATION
@@ -849,14 +855,14 @@ function mixVocalWithBeat(
 // ============================================
 
 /**
- * Process audio files and apply full mixing chain
+ * Process audio files and apply full mixing chain with AI-optimized parameters
  */
 async function processAudio(
     vocalBuffer: Buffer,
     beatBuffer: Buffer | null,
-    _referenceBuffer: Buffer | null,
+    referenceBuffer: Buffer | null,
     userMacros: UserMacroState,
-    parameters: ChainParameters | null
+    _parameters: ChainParameters | null
 ): Promise<ProcessingResult> {
     console.log('   Decoding vocal...');
     const vocalWav = await decodeAudio(vocalBuffer);
@@ -871,9 +877,51 @@ async function processAudio(
         vocalMono = resample(vocalMono, vocalWav.sampleRate, SAMPLE_RATE);
     }
 
-    // Process vocal through chain
-    console.log('   Processing vocal chain...');
-    const processedVocal = processVocalChain(vocalMono, SAMPLE_RATE, userMacros, parameters);
+    // ==========================================
+    // AI ANALYSIS PHASE
+    // ==========================================
+    console.log('   🤖 Running AI analysis...');
+
+    // Analyze vocal
+    const vocalAnalyzer = new WorkerVocalAnalyzer(SAMPLE_RATE);
+    const vocalAnalysis = vocalAnalyzer.analyze(vocalMono);
+    console.log(`   → Detected key: ${vocalAnalysis.detectedKey} ${vocalAnalysis.detectedScale}`);
+    console.log(`   → Fundamental: ${vocalAnalysis.fundamentalFreq.toFixed(0)}Hz`);
+    console.log(`   → Dynamic range: ${vocalAnalysis.dynamicRange.toFixed(1)}dB`);
+    console.log(`   → SNR: ${vocalAnalysis.signalToNoiseRatio.toFixed(1)}dB`);
+    if (vocalAnalysis.phoneRecordingConfidence > 0.5) {
+        console.log(`   → Phone recording detected (${(vocalAnalysis.phoneRecordingConfidence * 100).toFixed(0)}% confidence)`);
+    }
+
+    // Analyze reference if provided
+    let referenceAnalysis = null;
+    if (referenceBuffer) {
+        console.log('   → Analyzing reference track...');
+        const refWav = await decodeAudio(referenceBuffer);
+        let refMono = refWav.channels === 2 ? stereoToMono(refWav.data) : refWav.data;
+        if (refWav.sampleRate !== SAMPLE_RATE) {
+            refMono = resample(refMono, refWav.sampleRate, SAMPLE_RATE);
+        }
+        const refAnalyzer = new WorkerReferenceAnalyzer(SAMPLE_RATE);
+        referenceAnalysis = refAnalyzer.analyze(refMono);
+        console.log(`   → Reference reverb: ${referenceAnalysis.estimatedReverbDecay.toFixed(2)}s decay`);
+        console.log(`   → Reference loudness: ${referenceAnalysis.overallLufs.toFixed(1)} LUFS`);
+    }
+
+    // Generate optimized parameters
+    const optimizer = new WorkerParameterOptimizer();
+    const optimizedParams = optimizer.optimize(vocalAnalysis, referenceAnalysis, userMacros);
+    console.log('   → AI parameters generated:');
+    console.log(`     • HPF: ${optimizedParams.highPassFreq.toFixed(0)}Hz`);
+    console.log(`     • Compression: ${optimizedParams.compThreshold.toFixed(0)}dB @ ${optimizedParams.compRatio.toFixed(1)}:1`);
+    console.log(`     • Presence: +${optimizedParams.presenceBoost.toFixed(1)}dB, Air: +${optimizedParams.airBoost.toFixed(1)}dB`);
+    console.log(`     • Reverb: ${optimizedParams.reverbType} ${optimizedParams.reverbDecay.toFixed(1)}s @ ${(optimizedParams.reverbWet * 100).toFixed(0)}%`);
+
+    // ==========================================
+    // PROCESSING PHASE (using AI params)
+    // ==========================================
+    console.log('   Processing vocal chain with AI parameters...');
+    const processedVocal = processVocalChainWithAI(vocalMono, SAMPLE_RATE, userMacros, optimizedParams);
 
     let finalMix: Float32Array;
 
@@ -909,7 +957,7 @@ async function processAudio(
     // Calculate metrics
     const loudnessLufs = calculateApproxLufs(stereoMix);
     const peakDb = calculatePeakDb(stereoMix);
-    const durationSeconds = stereoMix.length / 2 / SAMPLE_RATE; // Divide by 2 for stereo
+    const durationSeconds = stereoMix.length / 2 / SAMPLE_RATE;
 
     console.log(`   ✓ Output: ${durationSeconds.toFixed(2)}s, ${loudnessLufs.toFixed(1)} LUFS, Peak: ${peakDb.toFixed(1)} dB`);
 
@@ -919,6 +967,93 @@ async function processAudio(
         peakDb,
         durationSeconds
     };
+}
+
+/**
+ * Process vocal chain using AI-optimized parameters
+ */
+function processVocalChainWithAI(
+    vocal: Float32Array,
+    sampleRate: number,
+    userMacros: UserMacroState,
+    aiParams: OptimizedParameters
+): Float32Array {
+    let audio = vocal;
+
+    // 1. Input gain staging (AI-calculated)
+    console.log('   → Input gain staging...');
+    const inputGain = Math.pow(10, aiParams.inputGainDb / 20);
+    audio = audio.map(s => s * inputGain);
+
+    // 2. High-pass filter (AI-calculated frequency)
+    console.log('   → Applying high-pass filter...');
+    const hpf = new BiquadFilter();
+    hpf.setHighPass(aiParams.highPassFreq, 0.707, sampleRate);
+    audio = Float32Array.from(audio.map(s => hpf.process(s)));
+
+    // 3. Mud cut EQ (if needed)
+    if (aiParams.mudCut < -1) {
+        console.log('   → Cutting mud frequencies...');
+        const mudEq = new BiquadFilter();
+        mudEq.setPeaking(280, aiParams.mudCut, 1.5, sampleRate);
+        audio = Float32Array.from(audio.map(s => mudEq.process(s)));
+    }
+
+    // 4. De-esser (AI-calculated)
+    console.log('   → Applying de-esser...');
+    const deEsserFilter = new BiquadFilter();
+    deEsserFilter.setPeaking(aiParams.deEsserFrequency, -3, 2, sampleRate);
+    audio = Float32Array.from(audio.map(s => deEsserFilter.process(s)));
+
+    // 5. Compressor (AI-calculated)
+    console.log('   → Applying compression...');
+    const comp = new SimpleCompressor(
+        aiParams.compThreshold,
+        aiParams.compRatio,
+        20, // attack
+        150, // release
+        sampleRate
+    );
+    audio = comp.process(audio);
+
+    // 6. Autotune (user macro controlled)
+    const autotuneAmount = userMacros.autotuneStrength / 100;
+    if (autotuneAmount > 0.05) {
+        console.log('   → Applying pitch correction...');
+        audio = applySimpleAutotune(audio, sampleRate, autotuneAmount);
+    }
+
+    // 7. Presence EQ (AI-calculated)
+    console.log('   → Applying presence EQ...');
+    const presenceEq = new BiquadFilter();
+    presenceEq.setPeaking(4000, aiParams.presenceBoost, 1.2, sampleRate);
+    audio = Float32Array.from(audio.map(s => presenceEq.process(s)));
+
+    // 8. Air shelf (AI-calculated)
+    const airEq = new BiquadFilter();
+    airEq.setHighShelf(12000, aiParams.airBoost, 0.7, sampleRate);
+    audio = Float32Array.from(audio.map(s => airEq.process(s)));
+
+    // 9. Saturation (AI-calculated)
+    if (aiParams.saturationMix > 1) {
+        console.log('   → Applying saturation...');
+        audio = applySaturation(audio, aiParams.saturationDrive, aiParams.saturationMix);
+    }
+
+    // 10. Reverb (AI-calculated + user macro)
+    if (aiParams.reverbWet > 0.01) {
+        console.log('   → Applying reverb...');
+        const reverb = new SimpleReverb(sampleRate, aiParams.reverbDecay, aiParams.reverbWet);
+        audio = reverb.process(audio);
+    }
+
+    // 11. Output gain (user macro)
+    console.log('   → Applying output gain...');
+    const outputGainDb = userMacros.vocalLoudness;
+    const outputGain = Math.pow(10, outputGainDb / 20);
+    audio = audio.map(s => s * outputGain);
+
+    return Float32Array.from(audio);
 }
 
 // ============================================
