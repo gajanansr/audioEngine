@@ -156,3 +156,27 @@
     border-color: var(--accent-primary);
     color: var(--text-primary);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .macro-panel {
+        gap: var(--space-md);
+    }
+
+    .macro-control {
+        padding-bottom: var(--space-md);
+    }
+
+    .type-selector {
+        flex-direction: column;
+    }
+
+    .type-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .section-header h3 {
+        font-size: var(--font-size-sm);
+    }
+}

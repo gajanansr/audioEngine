@@ -45,3 +45,32 @@
     color: var(--text-muted);
     font-size: var(--font-size-sm);
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .login-container {
+        padding: var(--space-md);
+    }
+
+    .login-title {
+        font-size: var(--font-size-xl);
+    }
+
+    .login-subtitle {
+        font-size: var(--font-size-sm);
+    }
+
+    .login-card {
+        padding: var(--space-lg);
+    }
+}
+
+@media (max-width: 480px) {
+    .login-title {
+        font-size: var(--font-size-lg);
+    }
+
+    .login-card {
+        padding: var(--space-md);
+    }
+}
