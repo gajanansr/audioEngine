@@ -25,6 +25,7 @@ import {
     OptimizedParameters
 } from './aiAnalyzer';
 import { BackingVocalsGenerator } from './backingVocals';
+import { SectionDetector } from './sectionDetector';
 
 // ============================================
 // ENVIRONMENT & CONFIGURATION
@@ -929,32 +930,51 @@ async function processAudio(
     const processedVocal = processVocalChainWithAI(vocalMono, SAMPLE_RATE, userMacros, optimizedParams);
 
     // ==========================================
+    // SECTION DETECTION PHASE
+    // ==========================================
+    console.log('   🔍 Detecting song sections...');
+    const sectionDetector = new SectionDetector(SAMPLE_RATE);
+    const sections = sectionDetector.detect(processedVocal);
+
+    // Create chorus mask (1 = chorus, 0 = verse)
+    const chorusMask = sectionDetector.createChorusMask(sections, processedVocal.length);
+
+    // Count chorus vs verse
+    const chorusSections = sections.filter(s => s.type === 'chorus');
+    console.log(`   → Found ${chorusSections.length} chorus sections (backing will apply only there)`);
+
+    // ==========================================
     // BACKING VOCALS PHASE (if enabled)
     // ==========================================
     let vocalWithBacking = processedVocal;
 
     if (userMacros.backingVocalsEnabled && userMacros.backingVocalsAmount && userMacros.backingVocalsAmount > 0) {
-        console.log('   🎤 Generating backing vocals...');
+        console.log('   🎤 Generating backing vocals (chorus only)...');
         const backingGenerator = new BackingVocalsGenerator(SAMPLE_RATE);
 
         const backingType = userMacros.backingVocalsType || 'doubles';
         const enableHarmonies = backingType === 'harmonies' || backingType === 'full';
         const enableDoubles = backingType === 'doubles' || backingType === 'full';
 
-        const backingVocals = backingGenerator.generate(processedVocal, {
-            enableHarmonies,
-            enableDoubles,
-            harmonyType: backingType === 'harmonies' ? 'thirds' : 'full',
-            doublesAmount: enableDoubles ? userMacros.backingVocalsAmount : 0,
-            harmoniesAmount: enableHarmonies ? userMacros.backingVocalsAmount : 0
-        });
+        // Pass chorus mask so backing only applies on chorus sections
+        const backingVocals = backingGenerator.generate(
+            processedVocal,
+            {
+                enableHarmonies,
+                enableDoubles,
+                harmonyType: backingType === 'harmonies' ? 'thirds' : 'full',
+                doublesAmount: enableDoubles ? userMacros.backingVocalsAmount : 0,
+                harmoniesAmount: enableHarmonies ? userMacros.backingVocalsAmount : 0
+            },
+            chorusMask // Apply only during chorus sections
+        );
 
         // Mix backing with lead
         for (let i = 0; i < vocalWithBacking.length && i < backingVocals.length; i++) {
             vocalWithBacking[i] += backingVocals[i];
         }
 
-        console.log(`   → Backing vocals added: ${backingType} @ ${userMacros.backingVocalsAmount}%`);
+        console.log(`   → Backing vocals added: ${backingType} @ ${userMacros.backingVocalsAmount}% (chorus only)`);
     }
 
     let finalMix: Float32Array;
