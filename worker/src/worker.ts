@@ -24,6 +24,7 @@ import {
     WorkerParameterOptimizer,
     OptimizedParameters
 } from './aiAnalyzer';
+import { BackingVocalsGenerator } from './backingVocals';
 
 // ============================================
 // ENVIRONMENT & CONFIGURATION
@@ -48,6 +49,10 @@ interface UserMacroState {
     reverbAmount: number;
     vocalLoudness: number;
     polishAmount: number;
+    // Backing vocals options (V2)
+    backingVocalsEnabled?: boolean;
+    backingVocalsType?: 'doubles' | 'harmonies' | 'full';
+    backingVocalsAmount?: number; // 0-100
 }
 
 interface Job {
@@ -923,6 +928,35 @@ async function processAudio(
     console.log('   Processing vocal chain with AI parameters...');
     const processedVocal = processVocalChainWithAI(vocalMono, SAMPLE_RATE, userMacros, optimizedParams);
 
+    // ==========================================
+    // BACKING VOCALS PHASE (if enabled)
+    // ==========================================
+    let vocalWithBacking = processedVocal;
+
+    if (userMacros.backingVocalsEnabled && userMacros.backingVocalsAmount && userMacros.backingVocalsAmount > 0) {
+        console.log('   🎤 Generating backing vocals...');
+        const backingGenerator = new BackingVocalsGenerator(SAMPLE_RATE);
+
+        const backingType = userMacros.backingVocalsType || 'doubles';
+        const enableHarmonies = backingType === 'harmonies' || backingType === 'full';
+        const enableDoubles = backingType === 'doubles' || backingType === 'full';
+
+        const backingVocals = backingGenerator.generate(processedVocal, {
+            enableHarmonies,
+            enableDoubles,
+            harmonyType: backingType === 'harmonies' ? 'thirds' : 'full',
+            doublesAmount: enableDoubles ? userMacros.backingVocalsAmount : 0,
+            harmoniesAmount: enableHarmonies ? userMacros.backingVocalsAmount : 0
+        });
+
+        // Mix backing with lead
+        for (let i = 0; i < vocalWithBacking.length && i < backingVocals.length; i++) {
+            vocalWithBacking[i] += backingVocals[i];
+        }
+
+        console.log(`   → Backing vocals added: ${backingType} @ ${userMacros.backingVocalsAmount}%`);
+    }
+
     let finalMix: Float32Array;
 
     // Mix with beat if provided
@@ -938,9 +972,9 @@ async function processAudio(
         }
 
         console.log('   Mixing vocal with beat...');
-        finalMix = mixVocalWithBeat(processedVocal, beatAudio, userMacros.vocalLoudness);
+        finalMix = mixVocalWithBeat(vocalWithBacking, beatAudio, userMacros.vocalLoudness);
     } else {
-        finalMix = processedVocal;
+        finalMix = vocalWithBacking;
     }
 
     // Normalize loudness

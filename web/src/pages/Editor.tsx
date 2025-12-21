@@ -11,6 +11,10 @@ interface UserMacros {
     reverbAmount: number;
     vocalLoudness: number;
     polishAmount: number;
+    // Backing vocals (V2)
+    backingVocalsEnabled?: boolean;
+    backingVocalsType?: 'doubles' | 'harmonies' | 'full';
+    backingVocalsAmount?: number;
 }
 
 interface Project {
@@ -33,59 +37,62 @@ export default function Editor() {
     // Project state
     const [project, setProject] = useState<Project | null>(null);
     const [loading, setLoading] = useState(true);
-
-    // File state (only used for new projects)
-    const [vocalFile, setVocalFile] = useState<File | null>(null);
-    const [beatFile, setBeatFile] = useState<File | null>(null);
-    const [referenceFile, setReferenceFile] = useState<File | null>(null);
-
-    const [macros, setMacros] = useState<UserMacros>({
-        autotuneStrength: 35,
-        reverbAmount: 30,
-        vocalLoudness: 0,
-        polishAmount: 50,
-    });
-
-    const [processing, setProcessing] = useState(false);
-    const [status, setStatus] = useState<string>('');
-
-    // Results state
-    const [renderUrl, setRenderUrl] = useState<string | null>(null);
-    const [renderPath, setRenderPath] = useState<string | null>(null);
-
-    // Premium modal
+    const [error, setError] = useState<string | null>(null);
+    const [editCount, setEditCount] = useState(0);
+    const [isPremium, setIsPremium] = useState(false);
     const [showPremiumModal, setShowPremiumModal] = useState(false);
 
-    // Computed values
-    const filesLocked = !!project?.vocal_path;
-    const editCount = project?.edit_count || 0;
-    const editsRemaining = Math.max(0, FREE_EDIT_LIMIT - editCount);
-    const canEdit = editCount < FREE_EDIT_LIMIT || project?.is_premium;
+    // File states
+    const [vocalFile, setVocalFile] = useState<File | null>(null);
+    const [beatFile, setBeatFile] = useState<File | null>(null);
+    const [refFile, setRefFile] = useState<File | null>(null);
+    const [filesLocked, setFilesLocked] = useState(false);
 
-    // Fetch project data on mount
+    // Processing states
+    const [processing, setProcessing] = useState(false);
+    const [status, setStatus] = useState('Ready to mix');
+
+    // Result states
+    const [renderUrl, setRenderUrl] = useState<string | null>(null);
+    const [latestRenderPath, setLatestRenderPath] = useState<string | null>(null);
+
+    // Macro state
+    const [macros, setMacros] = useState<UserMacros>({
+        autotuneStrength: 30,
+        reverbAmount: 25,
+        vocalLoudness: 0,
+        polishAmount: 50,
+        backingVocalsEnabled: false,
+        backingVocalsType: 'doubles',
+        backingVocalsAmount: 50
+    });
+
+    const editsRemaining = FREE_EDIT_LIMIT - editCount;
+    const canEdit = isPremium || editsRemaining > 0;
+
+    // Fetch project on mount
     useEffect(() => {
         async function fetchProject() {
             if (!projectId) return;
 
             const { data, error } = await supabase
                 .from('projects')
-                .select('id, name, vocal_path, beat_path, reference_path, latest_render_path, edit_count, is_premium')
+                .select('*')
                 .eq('id', projectId)
                 .single();
 
             if (error) {
-                console.error('Failed to fetch project:', error);
-                setStatus('Failed to load project');
-            } else {
+                setError('Project not found');
+            } else if (data) {
                 setProject(data);
+                setEditCount(data.edit_count || 0);
+                setIsPremium(data.is_premium || false);
+                setFilesLocked(!!data.vocal_path);
+                setLatestRenderPath(data.latest_render_path);
 
-                // If there's a saved render, load it
                 if (data.latest_render_path) {
                     const url = await getSignedUrl(data.latest_render_path);
-                    if (url) {
-                        setRenderUrl(url);
-                        setRenderPath(data.latest_render_path);
-                    }
+                    if (url) setRenderUrl(url);
                 }
             }
             setLoading(false);
@@ -94,7 +101,7 @@ export default function Editor() {
         fetchProject();
     }, [projectId]);
 
-    const handleMacroChange = useCallback((name: keyof UserMacros, value: number) => {
+    const handleMacroChange = useCallback((name: keyof UserMacros, value: number | boolean | string) => {
         setMacros(prev => ({ ...prev, [name]: value }));
     }, []);
 
@@ -124,9 +131,9 @@ export default function Editor() {
     };
 
     const downloadRender = async () => {
-        if (!renderPath) return;
+        if (!latestRenderPath) return;
 
-        const url = await getSignedUrl(renderPath);
+        const url = await getSignedUrl(latestRenderPath);
         if (url) {
             const a = document.createElement('a');
             a.href = url;
@@ -151,7 +158,7 @@ export default function Editor() {
         }
 
         setRenderUrl(null);
-        setRenderPath(null);
+        setLatestRenderPath(null);
         setProcessing(true);
         setStatus('Uploading files...');
 
@@ -170,7 +177,7 @@ export default function Editor() {
                 // Upload new files
                 vocalPath = await uploadFile(vocalFile!, 'vocals');
                 beatPath = beatFile ? await uploadFile(beatFile, 'beats') : null;
-                refPath = referenceFile ? await uploadFile(referenceFile, 'references') : null;
+                refPath = refFile ? await uploadFile(refFile, 'references') : null;
                 setStatus('Creating job...');
             }
 
@@ -242,7 +249,7 @@ export default function Editor() {
                     clearInterval(interval);
                     setStatus('✅ Processing complete!');
                     setProcessing(false);
-                    setRenderPath(job.render_path);
+                    setLatestRenderPath(job.render_path);
 
                     // Update project's latest render
                     await supabase
@@ -355,8 +362,8 @@ export default function Editor() {
                                 <FileUpload
                                     label="Reference Track"
                                     accept="audio/*"
-                                    file={referenceFile}
-                                    onFileSelect={setReferenceFile}
+                                    file={refFile}
+                                    onFileSelect={setRefFile}
                                     subtitle="Optional - for tone matching"
                                 />
                             </>
@@ -404,7 +411,7 @@ export default function Editor() {
                                     className="btn btn-secondary"
                                     onClick={() => {
                                         setRenderUrl(null);
-                                        setRenderPath(null);
+                                        setLatestRenderPath(null);
                                         setStatus('');
                                     }}
                                 >
