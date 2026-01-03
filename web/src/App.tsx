@@ -3,7 +3,6 @@ import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
-import OAuthConsent from './pages/oauth/OAuthConsent';
 
 function App() {
     const { user, loading } = useAuth();
@@ -30,10 +29,6 @@ function App() {
             <Route
                 path="/editor/:projectId"
                 element={user ? <Editor /> : <Navigate to="/login" />}
-            />
-            <Route
-                path="/oauth/consent"
-                element={<OAuthConsent />}
             />
             <Route
                 path="/"
