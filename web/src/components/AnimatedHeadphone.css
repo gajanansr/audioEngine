@@ -1,0 +1,337 @@
+/* ============================================
+   Animated Headphone Component
+   ============================================ */
+
+.headphone-container {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Glow Effects */
+.headphone-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.4;
+    animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.headphone-glow-1 {
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.headphone-glow-2 {
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.3) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    animation-delay: -2s;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* Sound Rings */
+.sound-rings {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.sound-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 2px solid rgba(99, 102, 241, 0.3);
+    border-radius: 50%;
+    animation: expand-ring 3s ease-out infinite;
+}
+
+.sound-ring-1 {
+    width: 180px;
+    height: 180px;
+    animation-delay: 0s;
+}
+
+.sound-ring-2 {
+    width: 180px;
+    height: 180px;
+    animation-delay: 1s;
+}
+
+.sound-ring-3 {
+    width: 180px;
+    height: 180px;
+    animation-delay: 2s;
+}
+
+@keyframes expand-ring {
+    0% {
+        width: 180px;
+        height: 180px;
+        opacity: 0.6;
+    }
+
+    100% {
+        width: 350px;
+        height: 350px;
+        opacity: 0;
+    }
+}
+
+/* Main SVG */
+.headphone-svg {
+    width: 220px;
+    height: 220px;
+    position: relative;
+    z-index: 2;
+    animation: float 6s ease-in-out infinite;
+    filter: drop-shadow(0 20px 40px rgba(99, 102, 241, 0.3));
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    25% {
+        transform: translateY(-12px) rotate(1deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(0deg);
+    }
+
+    75% {
+        transform: translateY(-15px) rotate(-1deg);
+    }
+}
+
+/* Headband Animation */
+.headband {
+    animation: headband-pulse 4s ease-in-out infinite;
+}
+
+@keyframes headband-pulse {
+
+    0%,
+    100% {
+        stroke-width: 8;
+    }
+
+    50% {
+        stroke-width: 9;
+    }
+}
+
+/* Ear Cup Animations */
+.ear-cup {
+    animation: cup-glow 3s ease-in-out infinite;
+}
+
+.left-cup {
+    animation-delay: 0s;
+}
+
+.right-cup {
+    animation-delay: 0.5s;
+}
+
+@keyframes cup-glow {
+
+    0%,
+    100% {
+        filter: url(#glow) brightness(1);
+    }
+
+    50% {
+        filter: url(#glow) brightness(1.2);
+    }
+}
+
+/* Speaker Mesh Animation */
+.speaker-mesh {
+    animation: mesh-pulse 2s ease-in-out infinite;
+}
+
+.left-mesh {
+    animation-delay: 0s;
+}
+
+.right-mesh {
+    animation-delay: 0.3s;
+}
+
+@keyframes mesh-pulse {
+
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Cup Highlight */
+.cup-highlight {
+    animation: highlight-shimmer 4s ease-in-out infinite;
+}
+
+@keyframes highlight-shimmer {
+
+    0%,
+    100% {
+        opacity: 0.15;
+    }
+
+    50% {
+        opacity: 0.25;
+    }
+}
+
+/* Music Notes */
+.music-notes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.note {
+    position: absolute;
+    font-size: 24px;
+    color: rgba(139, 92, 246, 0.6);
+    animation: float-note 4s ease-in-out infinite;
+}
+
+.note-1 {
+    top: 20%;
+    right: 10%;
+    animation-delay: 0s;
+}
+
+.note-2 {
+    top: 30%;
+    left: 5%;
+    animation-delay: 1.5s;
+    font-size: 20px;
+}
+
+.note-3 {
+    bottom: 25%;
+    right: 15%;
+    animation-delay: 3s;
+    font-size: 18px;
+}
+
+@keyframes float-note {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.4;
+    }
+
+    25% {
+        transform: translateY(-15px) rotate(10deg);
+        opacity: 0.7;
+    }
+
+    50% {
+        transform: translateY(-5px) rotate(-5deg);
+        opacity: 0.5;
+    }
+
+    75% {
+        transform: translateY(-20px) rotate(5deg);
+        opacity: 0.6;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .headphone-container {
+        width: 260px;
+        height: 260px;
+    }
+
+    .headphone-svg {
+        width: 180px;
+        height: 180px;
+    }
+
+    .headphone-glow-1 {
+        width: 160px;
+        height: 160px;
+    }
+
+    .headphone-glow-2 {
+        width: 220px;
+        height: 220px;
+    }
+
+    .sound-ring-1,
+    .sound-ring-2,
+    .sound-ring-3 {
+        width: 140px;
+        height: 140px;
+    }
+
+    @keyframes expand-ring {
+        0% {
+            width: 140px;
+            height: 140px;
+            opacity: 0.6;
+        }
+
+        100% {
+            width: 280px;
+            height: 280px;
+            opacity: 0;
+        }
+    }
+
+    .note {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .headphone-container {
+        width: 220px;
+        height: 220px;
+    }
+
+    .headphone-svg {
+        width: 150px;
+        height: 150px;
+    }
+}

@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Editor from './pages/Editor';
@@ -19,6 +20,10 @@ function App() {
     return (
         <Routes>
             <Route
+                path="/"
+                element={user ? <Navigate to="/dashboard" /> : <Landing />}
+            />
+            <Route
                 path="/login"
                 element={user ? <Navigate to="/dashboard" /> : <Login />}
             />
@@ -29,10 +34,6 @@ function App() {
             <Route
                 path="/editor/:projectId"
                 element={user ? <Editor /> : <Navigate to="/login" />}
-            />
-            <Route
-                path="/"
-                element={<Navigate to={user ? "/dashboard" : "/login"} />}
             />
         </Routes>
     );
