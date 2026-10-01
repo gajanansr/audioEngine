@@ -1,0 +1,21 @@
+name: plugin
+on:
+  push:
+    paths: ['plugin/**', '.claude-plugin/**', '.github/workflows/plugin.yml']
+  pull_request:
+    paths: ['plugin/**', '.claude-plugin/**', '.github/workflows/plugin.yml']
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: plugin } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: plugin/package-lock.json }
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run bundle
+      - name: Committed bundles must match the source
+        run: git diff --exit-code -- server

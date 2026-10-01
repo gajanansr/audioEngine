@@ -1,0 +1,9 @@
+{
+  "name": "automix",
+  "version": "1.0.0",
+  "description": "Professional mixing & mastering for real audio tracks. Analyze, clean up phone vocals, mix vocals over a beat, and master to streaming loudness with true-peak limiting — driven by measurements, not presets.",
+  "author": { "name": "gajanansr" },
+  "repository": "https://github.com/gajanansr/audioengine",
+  "license": "MIT",
+  "keywords": ["audio", "mixing", "mastering", "vocals", "lufs", "daw", "music-production"]
+}

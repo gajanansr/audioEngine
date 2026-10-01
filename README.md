@@ -1,3 +1,9 @@
+> ### 🔌 New: AutoMix as a Claude plugin
+> The mixing & mastering engine now also lives in [`plugin/`](plugin/README.md) as a standalone, headless
+> Claude plugin (MCP server + skills + slash commands) — real offline DSP with BS.1770 loudness metering,
+> true-peak limiting, linear-phase EQ, noise reduction and vocal+beat mixing. Install with
+> `/plugin marketplace add gajanansr/audioengine` then `/plugin install automix@automix`.
+
 <p align="center">
   <h1 align="center">🎙️ AutoMix</h1>
   <p align="center">

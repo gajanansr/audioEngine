@@ -1,0 +1,14 @@
+{
+  "name": "automix",
+  "owner": { "name": "gajanansr" },
+  "metadata": { "description": "AutoMix — a professional mixing & mastering engine for Claude" },
+  "plugins": [
+    {
+      "name": "automix",
+      "source": "./plugin",
+      "description": "Professional mixing & mastering for real audio tracks: analysis, vocal rescue, vocal+beat mixing, reference matching and true-peak loudness mastering.",
+      "version": "1.0.0",
+      "category": "audio"
+    }
+  ]
+}
